@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ledger Wise Outstanding Reports Of Buyer</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    margin:20px;
+    background:#f5f5f5;
+}
+
+h2{
+    text-align:center;
+    color:#1565C0;
+}
+
+.filter{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+input{
+    padding:10px;
+    font-size:16px;
+    width:100%;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px;
+    font-size:16px;
+    cursor:pointer;
+    background:#1565C0;
+    color:white;
+    border:none;
+}
+
+button:hover{
+    background:#0D47A1;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+    margin:20px 0;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    text-align:center;
+}
+
+.card h3{
+    margin:0;
+    color:#555;
+}
+
+.card h2{
+    margin-top:10px;
+    color:#1565C0;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+table,th,td{
+    border:1px solid #ccc;
+}
+
+th{
+    background:#1565C0;
+    color:white;
+}
+
+th,td{
+    padding:10px;
+    text-align:center;
+}
+
+tr:nth-child(even){
+    background:#f9f9f9;
+}
+
+tfoot{
+    font-weight:bold;
+    background:#eeeeee;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Ledger Wise Outstanding Report Reports Of Buyers</h2>
+
+<div class="filter">
+
+<div>
+<label>Search Customer</label>
+
+<input
+type="text"
+id="search"
+list="customerList"
+placeholder="Type Customer Name">
+
+<datalist id="customerList"></datalist>
+</div>
+
+<div>
+<label>From Date</label>
+<input type="date" id="fromDate">
+</div>
+
+<div>
+<label>To Date</label>
+<input type="date" id="toDate">
+</div>
+
+<div style="display:flex;align-items:end;">
+<button onclick="loadReport()">
+Search
+</button>
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Sales</h3>
+<h2> <span id="totalSales">0</span></h2>
+</div>
+
+<div class="card">
+<h3>Total Payment Received</h3>
+<h2> <span id="totalPayment">0</span></h2>
+</div>
+
+<div class="card">
+<h3>Total Outstanding</h3>
+<h2> <span id="totalOutstanding">0</span></h2>
+</div>
+
+</div>
+
+<div style="margin-bottom:15px;">
+    <button onclick="exportExcel()">📥 Export Excel</button>
+
+    <button onclick="exportPDF()"
+    style="margin-left:10px;background:#E53935;">
+        📄 Export PDF
+    </button>
+</div>
+
+
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Customer Name</th>
+<th>Total Sales</th>
+<th>Total Payment Received</th>
+<th>Outstanding</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tbody">
+
+</tbody>
+
+<tfoot>
+
+<tr style="
+    font-weight:bold;
+    background:#1565C0;
+    color:white;
+">
+
+<td>Grand Total</td>
+
+<td id="gSales">0</td>
+
+<td id="gPayment">0</td>
+
+<td id="gOutstanding">0</td>
+
+</tr>
+
+</tfoot>
+
+</table>
+
+<div style="margin-top:20px;text-align:center;">
+
+    <button onclick="previousPage()">
+        ◀ Previous
+    </button>
+
+    <span id="pageInfo"
+          style="margin:0 20px;
+                 font-weight:bold;
+                 font-size:18px;">
+        Page 1
+    </span>
+
+    <button onclick="nextPage()">
+        Next ▶
+    </button>
+
+</div>
+
+
+
+<script type="module">
+    
+
+window.exportExcel = function(){
+
+    let excelData = [];
+
+    // Heading
+    excelData.push([
+        "Customer Name",
+        "Total Sales",
+        "Total Payment Received",
+        "Outstanding"
+    ]);
+
+    // Export ALL filtered records
+    allRows.forEach(r=>{
+
+        excelData.push([
+            r.name,
+            r.sales,
+            r.payment,
+            r.outstanding
+        ]);
+
+    });
+
+    // Blank row
+    excelData.push([]);
+
+    // Grand Total
+    excelData.push([
+        "Grand Total",
+        document.getElementById("totalSales").innerText,
+        document.getElementById("totalPayment").innerText,
+        document.getElementById("totalOutstanding").innerText
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, ws, "Outstanding Report");
+
+    XLSX.writeFile(wb, "Buyer Outstanding Report.xlsx");
+
+}
+
+window.exportPDF = function () {
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("landscape", "mm", "a4");
+
+    // ---------------- Company ----------------
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("KALYANI MUSHROOM", 148, 15, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text("(Prop. Mr. Simanchal Patri)", 148, 22, { align: "center" });
+
+    doc.setFontSize(16);
+    doc.text("BUYER OUTSTANDING REPORT", 148, 32, { align: "center" });
+
+    // ---------------- Report Details ----------------
+
+    let ledger = document.getElementById("search").value || "All";
+
+    let fromDate = document.getElementById("fromDate").value || "All";
+
+    let toDate = document.getElementById("toDate").value || "All";
+
+    let printDate = new Date().toLocaleString("en-IN");
+
+    doc.setFontSize(10);
+
+    doc.text("Ledger : " + ledger, 14, 42);
+
+    doc.text("From Date : " + fromDate, 90, 42);
+
+    doc.text("To Date : " + toDate, 160, 42);
+
+    doc.text("Print : " + printDate, 225, 42);
+
+    // ---------------- Card Values ----------------
+
+    let totalSales =
+        document.getElementById("totalSales").innerText;
+
+    let totalPayment =
+        document.getElementById("totalPayment").innerText;
+
+    let totalOutstanding =
+        document.getElementById("totalOutstanding").innerText;
+
+    // ---------------- Cards ----------------
+
+    let y = 52;
+
+    function drawCard(x, title, value){
+
+        doc.rect(x, y, 82, 20);
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(11);
+
+        doc.text(title, x+3, y+7);
+
+        doc.setFontSize(13);
+
+        doc.text(" " + value, x+3, y+16);
+
+    }
+
+    drawCard(10,"Total Sales",totalSales);
+
+    drawCard(100,"Total Payment Received",totalPayment);
+
+    drawCard(190,"Total Outstanding",totalOutstanding);
+
+    // ---------------- Table ----------------
+
+    // ---------- Prepare ALL Rows ----------
+
+let body = [];
+
+allRows.forEach(r=>{
+
+    body.push([
+
+        r.name,
+
+        r.sales.toLocaleString('en-IN'),
+
+        r.payment.toLocaleString('en-IN'),
+
+        r.outstanding.toLocaleString('en-IN')
+
+    ]);
+
+});
+
+// ---------- Grand Total ----------
+
+body.push([
+
+    "Grand Total",
+
+    document.getElementById("totalSales").innerText,
+
+    document.getElementById("totalPayment").innerText,
+
+    document.getElementById("totalOutstanding").innerText
+
+]);
+
+doc.autoTable({
+
+    head:[[
+        "Customer Name",
+        "Total Sales",
+        "Total Payment",
+        "Outstanding"
+    ]],
+
+    body:body,
+
+    startY:90,
+
+    theme:"grid",
+
+    headStyles:{
+        fillColor:[21,101,192],
+        textColor:255
+    },
+
+    styles:{
+        fontSize:9
+    },
+
+    didParseCell:function(data){
+
+        if(
+            data.section === 'body' &&
+            data.row.index === body.length - 1
+        ){
+
+            data.cell.styles.fillColor = [21,101,192];
+            data.cell.styles.textColor = [255,255,255];
+            data.cell.styles.fontStyle = 'bold';
+
+        }
+
+    }
+
+});
+
+    // ---------------- Footer ----------------
+
+    let pageCount = doc.internal.getNumberOfPages();
+
+    for(let i=1;i<=pageCount;i++){
+
+        doc.setPage(i);
+
+        doc.setFontSize(10);
+
+        doc.text(
+            "Page " + i + " of " + pageCount,
+            250,
+            200
+        );
+
+    }
+
+    doc.save("Buyer Outstanding Report.pdf");
+
+}
+
+
+
+    
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+// ---------------- Firebase ----------------
+
+const firebaseConfig = {
+
+   apiKey: "AIzaSyBOw2CG4-8JWYNl5hf3aR7yCPjcPI41IC0",
+  authDomain: "ommtaxsolutions.firebaseapp.com",
+  projectId: "ommtaxsolutions",
+  storageBucket: "ommtaxsolutions.firebasestorage.app",
+  messagingSenderId: "944702919466",
+  appId: "1:944702919466:web:6f37b36e1d5cf6d7a54453",
+  measurementId: "G-NNTHM5Y4B8"
+
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ---------------- Pagination ----------------
+
+let allRows = [];          // Stores all report rows
+let currentPage = 1;       // Current page
+const rowsPerPage = 50;    // Records per page
+
+async function loadCustomerList(){
+
+    const snapshot = await getDocs(collection(db,"customers"));
+
+    let options = "";
+
+    snapshot.forEach(doc=>{
+
+        let data = doc.data();
+
+        options += `<option value="${data.name}"></option>`;
+
+    });
+
+    document.getElementById("customerList").innerHTML = options;
+
+}
+
+// ---------------- Report ----------------
+
+window.loadReport = async function(){
+
+    let search =
+        document.getElementById("search").value.toLowerCase();
+
+    let from =
+        document.getElementById("fromDate").value;
+
+    let to =
+        document.getElementById("toDate").value;
+
+    let ledger = {};
+
+    // -------- SALES --------
+
+    const salesSnap = await getDocs(collection(db,"sales"));
+
+    salesSnap.forEach(doc=>{
+
+        let d = doc.data();
+
+        if(from && d.date < from) return;
+        if(to && d.date > to) return;
+
+        if(search && !d.name.toLowerCase().includes(search)) return;
+
+        if(!ledger[d.name]){
+
+            ledger[d.name]={
+
+                sales:0,
+                payment:0
+
+            };
+
+        }
+
+        ledger[d.name].sales += Number(d.payment || 0);
+
+    });
+
+    // -------- PAYMENTS --------
+
+    const paymentSnap = await getDocs(collection(db,"payments"));
+
+    paymentSnap.forEach(doc=>{
+
+        let d = doc.data();
+
+        if(from && d.date < from) return;
+        if(to && d.date > to) return;
+
+        if(search && !d.name.toLowerCase().includes(search)) return;
+
+        if(!ledger[d.name]){
+
+            ledger[d.name]={
+
+                sales:0,
+                payment:0
+
+            };
+
+        }
+
+        ledger[d.name].payment += Number(d.payment || 0);
+
+    });
+
+    currentPage = 1;
+
+displayReport(ledger);
+}
+
+window.previousPage = function(){
+
+    if(currentPage > 1){
+
+        currentPage--;
+
+        displayPage();
+
+    }
+
+}
+
+window.nextPage = function(){
+
+    let totalPages =
+        Math.ceil(allRows.length / rowsPerPage);
+
+    if(currentPage < totalPages){
+
+        currentPage++;
+
+        displayPage();
+
+    }
+
+}
+
+function displayPage(){
+
+    let start = (currentPage - 1) * rowsPerPage;
+    let end = start + rowsPerPage;
+
+    let pageRows = allRows.slice(start,end);
+
+    let html = "";
+
+    pageRows.forEach(r=>{
+
+        html += `
+        <tr>
+
+        <td style="text-align:left">${r.name}</td>
+
+        <td>${r.sales.toLocaleString('en-IN')}</td>
+
+        <td>${r.payment.toLocaleString('en-IN')}</td>
+
+        <td style="color:${r.outstanding>=0?'red':'green'};
+        font-weight:bold;">
+         ${r.outstanding.toLocaleString('en-IN')}
+        </td>
+
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("tbody").innerHTML = html;
+
+
+    let totalPages = Math.max(1,
+        Math.ceil(allRows.length / rowsPerPage)
+    );
+
+    document.getElementById("pageInfo").innerHTML =
+    "Page " + currentPage + " of " + totalPages;
+
+}
+
+
+
+
+function displayReport(ledger){
+
+    let grandSales = 0;
+    let grandPayment = 0;
+    let grandOutstanding = 0;
+
+    // Convert object to array
+    allRows = Object.keys(ledger).sort().map(name=>{
+
+        let sales = ledger[name].sales;
+        let payment = ledger[name].payment;
+        let outstanding = sales - payment;
+
+        grandSales += sales;
+        grandPayment += payment;
+        grandOutstanding += outstanding;
+
+        return{
+            name,
+            sales,
+            payment,
+            outstanding
+        };
+
+    });
+
+    let start = (currentPage - 1) * rowsPerPage;
+    let end = start + rowsPerPage;
+
+    let pageRows = allRows.slice(start,end);
+
+    let html = "";
+
+    pageRows.forEach(r=>{
+
+        html += `
+        <tr>
+
+            <td style="text-align:left">${r.name}</td>
+
+            <td>${r.sales.toLocaleString('en-IN')}</td>
+
+<td>${r.payment.toLocaleString('en-IN')}</td>
+
+<td style="
+    color:${r.outstanding>=0?'red':'green'};
+    font-weight:bold;">
+    ${r.outstanding.toLocaleString('en-IN')}
+</td>
+
+            
+
+        </tr>
+        `;
+
+    });
+
+    if(pageRows.length==0){
+
+        html=`
+        <tr>
+            <td colspan="4"
+            style="color:red;text-align:center;">
+
+            No Records Found
+
+            </td>
+        </tr>
+        `;
+
+    }
+
+    document.getElementById("tbody").innerHTML = html;
+
+    // Grand Totals
+    document.getElementById("gSales").innerHTML =
+        " "+grandSales.toLocaleString('en-IN');
+
+    document.getElementById("gPayment").innerHTML =
+        " "+grandPayment.toLocaleString('en-IN');
+
+    document.getElementById("gOutstanding").innerHTML =
+        " "+grandOutstanding.toLocaleString('en-IN');
+
+    document.getElementById("totalSales").innerHTML =
+        grandSales.toLocaleString('en-IN');
+
+    document.getElementById("totalPayment").innerHTML =
+        grandPayment.toLocaleString('en-IN');
+
+    document.getElementById("totalOutstanding").innerHTML =
+        grandOutstanding.toLocaleString('en-IN');
+
+    // Page Number
+    let totalPages = Math.max(1,Math.ceil(allRows.length/rowsPerPage));
+
+    document.getElementById("pageInfo").innerHTML =
+        "Page " + currentPage + " of " + totalPages;
+
+}
+
+// Load report automatically
+loadCustomerList();
+loadReport();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+</body>
+</html>
